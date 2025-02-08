@@ -18,6 +18,11 @@ interface ServiceInfo {
   url?: string;
 }
 
+interface WorkshopStatus {
+  online: boolean | null; // Can be null when loading
+  latency: number;
+}
+
 function UpdatedTimestamp({ date }: { date: Date }) {
   const formatTimeAgo = (date: Date) => {
     const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -70,6 +75,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [workshopStatus, setWorkshopStatus] = useState<WorkshopStatus>({ online: null, latency: 0 });
 
   const targetServices: ServiceInfo[] = [
     { name: 'Main Page', url: 'https://www.bohemia.net' },
@@ -102,9 +108,27 @@ function App() {
     }
   };
 
+  const checkWorkshopWebsite = async () => {
+    const startTime = Date.now();
+    try {
+      const response = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://reforger.armaplatform.com/workshop'));
+      const endTime = Date.now();
+      setWorkshopStatus({
+        online: response.ok,
+        latency: endTime - startTime
+      });
+    } catch (error) {
+      setWorkshopStatus({ online: false, latency: 0 });
+    }
+  };
+
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000); // Refresh every minute
+    checkWorkshopWebsite();
+    const interval = setInterval(() => {
+      fetchData();
+      checkWorkshopWebsite();
+    }, 60000); // Refresh every minute
     return () => clearInterval(interval);
   }, []);
 
@@ -135,7 +159,7 @@ function App() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="bg-gray-800 rounded-lg shadow-md p-8 max-w-md">
+        <div role="alert" aria-live="assertive" className="bg-gray-800 rounded-lg shadow-md p-8 max-w-md">
           <div className="flex items-center gap-3 mb-4">
             <AlertTriangle className="w-8 h-8 text-amber-500" />
             <h2 className="text-xl font-semibold text-gray-100">Connection Error</h2>
@@ -159,7 +183,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 p-6 flex flex-col">
-      <div className="container mx-auto" style={{ maxWidth: "50%" }}> {/* Added fixed width container */}
+      <div className="container mx-auto" style={{ maxWidth: "50%" }}> {/* Reverted from max-w-4xl */}
         <div className="w-full flex-grow">
           <div className="flex justify-center"> {/* Added wrapper for centering */}
             <div className="w-3/4 flex-grow"> {/* Changed from w-1/2 to w-3/4 (75% width) */}
@@ -172,11 +196,13 @@ function App() {
                 </div>
                 <div className="flex items-center gap-4">
                   <button 
+                    disabled={loading}
                     onClick={() => {
                       setLoading(true);
                       fetchData();
                     }}
-                    className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-gray-800 transition-colors"
+                    aria-label="Refresh service status"
+                    className={`p-2 rounded-lg transition-colors duration-200 ${loading ? "cursor-not-allowed opacity-50" : "text-gray-400 hover:text-blue-500 hover:bg-gray-800"}`}
                     title="Refresh now"
                   >
                     <RefreshCcw className="w-5 h-5" />
@@ -187,25 +213,11 @@ function App() {
 
               <div className="grid gap-8 grid-cols-1 animate-[fadeIn_0.5s_ease-in]">
                 {services.map((service) => (
-                  <div key={service.name} className="bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-8 w-full">
+                  <div key={service.name} role="article" tabIndex={0} className="bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-8 w-full">
                     {/* Header section */}
                     <div className="flex flex-col items-center gap-4 mb-8">
                       <h2 className="text-2xl font-bold text-gray-100 text-center flex items-center gap-3">
-                        {(() => {
-                          const serviceInfo = targetServices.find(s => s.name === service.name);
-                          return serviceInfo?.url ? (
-                            <a 
-                              href={serviceInfo.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-blue-400 transition-colors flex items-center gap-2"
-                            >
-                              {service.name}
-                            </a>
-                          ) : (
-                            service.name
-                          );
-                        })()}
+                        {service.name} {/* Remove the URL/link from service name */}
                         {service.online ? (
                           <span className="text-base text-green-500 bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
                             <CheckCircle className="w-4 h-4" />
@@ -218,6 +230,35 @@ function App() {
                           </span>
                         )}
                       </h2>
+                      
+                      {/* Workshop Website Status - make text clickable */}
+                      {service.name === 'Arma Reforger Workshop API' && (
+                        <div className="flex items-center gap-2 mt-2 mb-8">
+                          <span className="text-sm text-gray-400">Workshop Website:</span>
+                          {workshopStatus.online === null ? (
+                            <span className="text-sm text-gray-400 animate-pulse">Checking...</span>
+                          ) : (
+                            <a
+                              href="https://reforger.armaplatform.com/workshop"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-1"
+                            >
+                              {workshopStatus.online ? (
+                                <span className="text-sm text-green-500 bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3" />
+                                  Online ({(workshopStatus.latency / 1000).toFixed(2)}s)
+                                </span>
+                              ) : (
+                                <span className="text-sm text-red-500 bg-red-500/10 px-2 py-1 rounded-full flex items-center gap-1">
+                                  <XCircle className="w-3 h-3" />
+                                  Offline
+                                </span>
+                              )}
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Add Chart before Stats Grid */}
