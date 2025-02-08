@@ -351,7 +351,7 @@ function App() {
       
       {/* Footer */}
       <footer className="text-center text-gray-500 text-sm mt-8 pb-4">
-        <p>v 0.1.8 • Made with ❤️ by <a href="https://google.com/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">Wil3son</a></p>
+        <p>v 0.1.8 • Made with ❤️ by <a href="https://google.com/tes" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">Wil3son</a></p>
         <p>ProjecX Arma Servers @ Discord: <a href="https://discord.gg/s4ZYfU3DUv" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">ProjecX Arma</a></p>
       </footer>
     </div>
