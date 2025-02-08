@@ -217,7 +217,18 @@ function App() {
                     {/* Header section */}
                     <div className="flex flex-col items-center gap-4 mb-8">
                       <h2 className="text-2xl font-bold text-gray-100 text-center flex items-center gap-3">
-                        {service.name} {/* Remove the URL/link from service name */}
+                        {service.name === 'Main Page' ? (
+                          <a 
+                            href="https://www.bohemia.net" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="hover:text-blue-400 transition-colors"
+                          >
+                            {service.name}
+                          </a>
+                        ) : (
+                          service.name
+                        )}
                         {service.online ? (
                           <span className="text-base text-green-500 bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
                             <CheckCircle className="w-4 h-4" />
@@ -234,28 +245,26 @@ function App() {
                       {/* Workshop Website Status - make text clickable */}
                       {service.name === 'Arma Reforger Workshop API' && (
                         <div className="flex items-center gap-2 mt-2 mb-8">
-                          <span className="text-sm text-gray-400">Workshop Website:</span>
+                          <a
+                            href="https://reforger.armaplatform.com/workshop"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-gray-400 hover:text-blue-400 transition-colors"
+                          >
+                            Workshop Website:
+                          </a>
                           {workshopStatus.online === null ? (
                             <span className="text-sm text-gray-400 animate-pulse">Checking...</span>
+                          ) : workshopStatus.online ? (
+                            <span className="text-sm text-green-500 bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Online ({(workshopStatus.latency / 1000).toFixed(2)}s)
+                            </span>
                           ) : (
-                            <a
-                              href="https://reforger.armaplatform.com/workshop"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-1"
-                            >
-                              {workshopStatus.online ? (
-                                <span className="text-sm text-green-500 bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
-                                  <CheckCircle className="w-3 h-3" />
-                                  Online ({(workshopStatus.latency / 1000).toFixed(2)}s)
-                                </span>
-                              ) : (
-                                <span className="text-sm text-red-500 bg-red-500/10 px-2 py-1 rounded-full flex items-center gap-1">
-                                  <XCircle className="w-3 h-3" />
-                                  Offline
-                                </span>
-                              )}
-                            </a>
+                            <span className="text-sm text-red-500 bg-red-500/10 px-2 py-1 rounded-full flex items-center gap-1">
+                              <XCircle className="w-3 h-3" />
+                              Offline
+                            </span>
                           )}
                         </div>
                       )}
