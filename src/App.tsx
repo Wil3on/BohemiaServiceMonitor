@@ -18,6 +18,11 @@ interface ServiceInfo {
   url?: string;
 }
 
+interface WorkshopStatus {
+  online: boolean;
+  latency: number;
+}
+
 function UpdatedTimestamp({ date }: { date: Date }) {
   const formatTimeAgo = (date: Date) => {
     const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -70,6 +75,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [workshopStatus, setWorkshopStatus] = useState<WorkshopStatus>({ online: false, latency: 0 });
 
   const targetServices: ServiceInfo[] = [
     { name: 'Main Page', url: 'https://www.bohemia.net' },
@@ -102,9 +108,27 @@ function App() {
     }
   };
 
+  const checkWorkshopWebsite = async () => {
+    const startTime = Date.now();
+    try {
+      const response = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://reforger.armaplatform.com/workshop'));
+      const endTime = Date.now();
+      setWorkshopStatus({
+        online: response.ok,
+        latency: endTime - startTime
+      });
+    } catch (error) {
+      setWorkshopStatus({ online: false, latency: 0 });
+    }
+  };
+
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000); // Refresh every minute
+    checkWorkshopWebsite();
+    const interval = setInterval(() => {
+      fetchData();
+      checkWorkshopWebsite();
+    }, 60000); // Refresh every minute
     return () => clearInterval(interval);
   }, []);
 
@@ -191,21 +215,7 @@ function App() {
                     {/* Header section */}
                     <div className="flex flex-col items-center gap-4 mb-8">
                       <h2 className="text-2xl font-bold text-gray-100 text-center flex items-center gap-3">
-                        {(() => {
-                          const serviceInfo = targetServices.find(s => s.name === service.name);
-                          return serviceInfo?.url ? (
-                            <a 
-                              href={serviceInfo.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-blue-400 transition-colors flex items-center gap-2"
-                            >
-                              {service.name}
-                            </a>
-                          ) : (
-                            service.name
-                          );
-                        })()}
+                        {service.name} {/* Remove the URL/link from service name */}
                         {service.online ? (
                           <span className="text-base text-green-500 bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
                             <CheckCircle className="w-4 h-4" />
@@ -218,6 +228,31 @@ function App() {
                           </span>
                         )}
                       </h2>
+                      
+                      {/* Workshop Website Status - make text clickable */}
+                      {service.name === 'Arma Reforger Workshop API' && (
+                        <div className="flex items-center gap-2 mt-2 mb-8">
+                          <a 
+                            href="https://reforger.armaplatform.com/workshop"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-gray-400 hover:text-blue-400 transition-colors"
+                          >
+                            Workshop Website:
+                          </a>
+                          {workshopStatus.online ? (
+                            <span className="text-sm text-green-500 bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Online ({(workshopStatus.latency / 1000).toFixed(2)}s)
+                            </span>
+                          ) : (
+                            <span className="text-sm text-red-500 bg-red-500/10 px-2 py-1 rounded-full flex items-center gap-1">
+                              <XCircle className="w-3 h-3" />
+                              Offline
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Add Chart before Stats Grid */}
