@@ -19,7 +19,7 @@ interface ServiceInfo {
 }
 
 interface WorkshopStatus {
-  online: boolean;
+  online: boolean | null; // Can be null when loading
   latency: number;
 }
 
@@ -75,7 +75,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const [workshopStatus, setWorkshopStatus] = useState<WorkshopStatus>({ online: false, latency: 0 });
+  const [workshopStatus, setWorkshopStatus] = useState<WorkshopStatus>({ online: null, latency: 0 });
 
   const targetServices: ServiceInfo[] = [
     { name: 'Main Page', url: 'https://www.bohemia.net' },
@@ -159,7 +159,7 @@ function App() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="bg-gray-800 rounded-lg shadow-md p-8 max-w-md">
+        <div role="alert" aria-live="assertive" className="bg-gray-800 rounded-lg shadow-md p-8 max-w-md">
           <div className="flex items-center gap-3 mb-4">
             <AlertTriangle className="w-8 h-8 text-amber-500" />
             <h2 className="text-xl font-semibold text-gray-100">Connection Error</h2>
@@ -183,7 +183,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 p-6 flex flex-col">
-      <div className="container mx-auto" style={{ maxWidth: "50%" }}> {/* Added fixed width container */}
+      <div className="container mx-auto" style={{ maxWidth: "50%" }}> {/* Reverted from max-w-4xl */}
         <div className="w-full flex-grow">
           <div className="flex justify-center"> {/* Added wrapper for centering */}
             <div className="w-3/4 flex-grow"> {/* Changed from w-1/2 to w-3/4 (75% width) */}
@@ -196,11 +196,13 @@ function App() {
                 </div>
                 <div className="flex items-center gap-4">
                   <button 
+                    disabled={loading}
                     onClick={() => {
                       setLoading(true);
                       fetchData();
                     }}
-                    className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-gray-800 transition-colors"
+                    aria-label="Refresh service status"
+                    className={`p-2 rounded-lg transition-colors duration-200 ${loading ? "cursor-not-allowed opacity-50" : "text-gray-400 hover:text-blue-500 hover:bg-gray-800"}`}
                     title="Refresh now"
                   >
                     <RefreshCcw className="w-5 h-5" />
@@ -211,11 +213,22 @@ function App() {
 
               <div className="grid gap-8 grid-cols-1 animate-[fadeIn_0.5s_ease-in]">
                 {services.map((service) => (
-                  <div key={service.name} className="bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-8 w-full">
+                  <div key={service.name} role="article" tabIndex={0} className="bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-8 w-full">
                     {/* Header section */}
                     <div className="flex flex-col items-center gap-4 mb-8">
                       <h2 className="text-2xl font-bold text-gray-100 text-center flex items-center gap-3">
-                        {service.name} {/* Remove the URL/link from service name */}
+                        {service.name === 'Main Page' ? (
+                          <a 
+                            href="https://www.bohemia.net" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="hover:text-blue-400 transition-colors"
+                          >
+                            {service.name}
+                          </a>
+                        ) : (
+                          service.name
+                        )}
                         {service.online ? (
                           <span className="text-base text-green-500 bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
                             <CheckCircle className="w-4 h-4" />
@@ -232,7 +245,7 @@ function App() {
                       {/* Workshop Website Status - make text clickable */}
                       {service.name === 'Arma Reforger Workshop API' && (
                         <div className="flex items-center gap-2 mt-2 mb-8">
-                          <a 
+                          <a
                             href="https://reforger.armaplatform.com/workshop"
                             target="_blank"
                             rel="noopener noreferrer"
@@ -240,7 +253,9 @@ function App() {
                           >
                             Workshop Website:
                           </a>
-                          {workshopStatus.online ? (
+                          {workshopStatus.online === null ? (
+                            <span className="text-sm text-gray-400 animate-pulse">Checking...</span>
+                          ) : workshopStatus.online ? (
                             <span className="text-sm text-green-500 bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
                               <CheckCircle className="w-3 h-3" />
                               Online ({(workshopStatus.latency / 1000).toFixed(2)}s)
@@ -345,7 +360,7 @@ function App() {
       
       {/* Footer */}
       <footer className="text-center text-gray-500 text-sm mt-8 pb-4">
-        <p>v 0.1.8 • Made with ❤️ by <a href="https://google.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">Wil3son</a></p>
+        <p>v 0.1.8 • Made with ❤️ by <a href="https://google.com/tes" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">Wil3son</a></p>
         <p>ProjecX Arma Servers @ Discord: <a href="https://discord.gg/s4ZYfU3DUv" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">ProjecX Arma</a></p>
       </footer>
     </div>
